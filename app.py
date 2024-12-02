@@ -4,7 +4,8 @@ import os
 from openai import OpenAI
 import streamlit as st
 from dotenv import load_dotenv
-from llm_config import system_prompt as being_asked_advice
+from llm_advice import system_prompt as being_asked_advice
+from llm_preferences import system_prompt as preferences
 load_dotenv()
 openAI_client = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
@@ -13,10 +14,7 @@ openAI_client = OpenAI(
 # Define available modules
 MODULES = {
     "Being Asked to Give Advice": "Practice giving advice in various scenarios",
-    "Asking for Advice": "Practice asking for advice effectively",
-    "Small Talk": "Practice engaging in casual conversation",
-    "Difficult Conversations": "Practice handling challenging discussions",
-    "Professional Communication": "Practice workplace communication"
+    "Preferences": "Practice giving preferences over topics"
 }
 
 # Initialize session state
@@ -32,8 +30,8 @@ def initialize_module(module_name):
     system_prompt = None
     if module_name == "Being Asked to Give Advice":
             system_prompt = being_asked_advice
-    elif module_name == "Professional Communication":
-            system_prompt = "ROyaaaaal Rumble"
+    elif module_name == "Preferences":
+            system_prompt = preferences
     system_message = {
         'role': 'system',
         'content': system_prompt  # You might want to modify this based on the selected module
@@ -44,7 +42,7 @@ def initialize_module(module_name):
     # Generate initial message
     with st.spinner("Initializing module..."):
         stream = openAI_client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=st.session_state['messages'],
             stream=True
         )
