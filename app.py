@@ -1,15 +1,15 @@
-# app.py
-
 import os
 from openai import OpenAI
+from gtts import gTTS
 import streamlit as st
 from dotenv import load_dotenv
+import tempfile  # To store temporary audio files
 from llm_advice import system_prompt as being_asked_advice
 from llm_preferences import system_prompt as preferences
+
+# Load environment variables
 load_dotenv()
-openAI_client = OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY"),
-)
+openAI_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 # Define available modules
 MODULES = {
@@ -25,13 +25,22 @@ if 'selected_module' not in st.session_state:
 if 'module_initialized' not in st.session_state:
     st.session_state['module_initialized'] = False
 
+def text_to_speech(text):
+    """Convert text to speech using gTTS"""
+    with st.spinner("Generating audio..."):
+        tts = gTTS(text)
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
+        tts.save(temp_file.name)
+    return temp_file.name
+
+
 def initialize_module(module_name):
     """Initialize the selected module"""
     system_prompt = None
     if module_name == "Being Asked to Give Advice":
-            system_prompt = being_asked_advice
+        system_prompt = being_asked_advice
     elif module_name == "Preferences":
-            system_prompt = preferences
+        system_prompt = preferences
     system_message = {
         'role': 'system',
         'content': system_prompt  # You might want to modify this based on the selected module
@@ -51,7 +60,9 @@ def initialize_module(module_name):
             if chunk.choices[0].delta.content is not None:
                 full_response += chunk.choices[0].delta.content
         
-        st.session_state['messages'].append({'role': 'assistant', 'content': full_response})
+    st.session_state['messages'].append({'role': 'assistant', 'content': full_response})
+    audio_file = text_to_speech(full_response)
+    st.audio(audio_file, format="audio/mp3")
 
 def reset_session():
     """Reset the session state"""
@@ -108,7 +119,7 @@ if st.session_state.get('selected_module'):
             response_placeholder = st.empty()
             full_response = ""
             stream = openAI_client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-4o",
                 messages=st.session_state['messages'],
                 stream=True
             )
@@ -118,5 +129,9 @@ if st.session_state.get('selected_module'):
                     response_placeholder.markdown(full_response + "▌")
             response_placeholder.markdown(full_response)
             st.session_state['messages'].append({'role': 'assistant', 'content': full_response})
+
+            # Generate TTS audio and play it
+            audio_file = text_to_speech(full_response)
+            st.audio(audio_file, format="audio/mp3")
 else:
     st.info("👈 Please select a module from the sidebar to begin.")
