@@ -3,11 +3,9 @@
 ## Setup Instructions
 
 1. **Pip install dependencies**
-   In the terminal run:
+   In the terminal run (expects atleast python 3.10):
    ```bash
-   pip install openai
-   pip install streamlit
-   pip install python-dotenv
+   pip install -r requirements.txt
    ```
 2. **Create a .env file to place your openAI key**
    This file should have one line in the following format
